@@ -149,6 +149,7 @@ export function MapView() {
   const [deviceTemplates, setDeviceTemplates] = useState<DeviceTemplate[]>([])
   const [showDeviceList, setShowDeviceList] = useState(false)
   const [showDeviceForm, setShowDeviceForm] = useState(false)
+  const [pendingMarker, setPendingMarker] = useState<{ layer: L.Marker; latlng: L.LatLng } | null>(null)
 
   const setPlacingMode = useCallback((on: boolean) => {
     placingRef.current = on
@@ -390,12 +391,15 @@ export function MapView() {
       if (!layer) return
       const kind = kindOfLayer(layer)
       if (!kind) return
-      register(layer, { id: newId(), kind })
+      
       if (layer instanceof L.Marker) {
-        // Marker hasil gambar: pindahkan dari peta ke cluster/plain sesuai toggle.
+        // Marker: show template selector first
         map.removeLayer(layer)
-        attachMarkers([layer])
+        setPendingMarker({ layer, latlng: layer.getLatLng() })
+        return
       }
+      
+      register(layer, { id: newId(), kind })
       markDirty()
     })
 
@@ -779,6 +783,60 @@ export function MapView() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {pendingMarker && (
+        <div className="device-selector-popup">
+          <div className="device-selector-header">
+            <h3>Pilih Template Perangkat</h3>
+            <button type="button" onClick={() => setPendingMarker(null)}>✕</button>
+          </div>
+          <div className="device-selector-list">
+            {deviceTemplates.length === 0 ? (
+              <p>Belum ada template. Buat di menu "Perangkat" dulu.</p>
+            ) : (
+              deviceTemplates.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  className="device-selector-item"
+                  onClick={() => {
+                    const store = getStore()
+                    const markerId = newId()
+                    const feature: StoredFeature = {
+                      type: 'Feature',
+                      geometry: {
+                        type: 'Point',
+                        coordinates: [pendingMarker.latlng.lng, pendingMarker.latlng.lat],
+                      },
+                      properties: {
+                        id: markerId,
+                        kind: 'marker',
+                        templateId: t.id,
+                        name: t.name,
+                        tag: t.tag,
+                        brand: t.brand,
+                        specs: t.specs,
+                      },
+                    }
+                    const result = loadLayers(store)
+                    const features = result.status === 'ok' || result.status === 'legacy' ? result.features : []
+                    features.push(feature)
+                    saveLayers(store, features)
+                    
+                    // Reload map to show new marker
+                    window.location.reload()
+                  }}
+                >
+                  <strong>{t.name}</strong>
+                  <span className="device-selector-tag">{t.tag}</span>
+                  <br />
+                  <small>{t.brand}</small>
+                </button>
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>
