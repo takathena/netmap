@@ -208,7 +208,20 @@ export function MapView() {
     const saveState = debounce(() => {
       try {
         const features = collectLayers()
-          .map((l: any) => (typeof l.toGeoJSON === 'function' ? l.toGeoJSON() : null))
+          .map((l: any) => {
+            if (typeof l.toGeoJSON !== 'function') return null
+            const f = l.toGeoJSON()
+            // Preserve geoman text marker options (text content, centered, etc.)
+            // so restored text doesn't degrade into a plain marker.
+            if (l instanceof L.Marker && l.options && (l.options as any).textMarker) {
+              f.properties = f.properties || {}
+              f.properties.textMarker = true
+              if ((l.options as any).text != null) f.properties.text = (l.options as any).text
+              if ((l.options as any).textMarkerCentered) f.properties.textMarkerCentered = true
+              if ((l.options as any).textOptions) f.properties.textOptions = (l.options as any).textOptions
+            }
+            return f
+          })
           .filter(Boolean)
         localStorage.setItem(LAYERS_KEY, JSON.stringify(features))
       } catch {}
@@ -238,6 +251,18 @@ export function MapView() {
           features.forEach((f: any) => {
             try {
               const g = L.geoJSON(f, {
+                pointToLayer: (feature: any, latlng: any) => {
+                  const p = (feature && feature.properties) || {}
+                  if (p.textMarker) {
+                    return L.marker(latlng, {
+                      textMarker: true,
+                      text: p.text || '',
+                      textMarkerCentered: !!p.textMarkerCentered,
+                      textOptions: p.textOptions,
+                    } as any)
+                  }
+                  return L.marker(latlng)
+                },
                 onEachFeature: (_feat, layer) => {
                   try { (layer as any).pm?.enable?.() } catch {}
                 },
@@ -245,9 +270,17 @@ export function MapView() {
               const ls = g.getLayers()
               ls.forEach((layer: any) => {
                 try {
+                  const isText = !!(layer && layer.options && layer.options.textMarker)
                   if (layer instanceof L.Marker) {
-                    if (clusterEnabledRef.current) cluster.addLayer(layer)
-                    else plain.addLayer(layer)
+                    if (isText) {
+                      // Text marker: keep on map (not clustered) and re-init so
+                      // the text renders instead of a plain marker.
+                      map.addLayer(layer)
+                      try { (L as any).PM.reInitLayer(layer) } catch {}
+                    } else {
+                      if (clusterEnabledRef.current) cluster.addLayer(layer)
+                      else plain.addLayer(layer)
+                    }
                   } else {
                     map.addLayer(layer)
                   }
@@ -259,8 +292,7 @@ export function MapView() {
                     }
                   } catch {}
                 } catch {}
-              })
-            } catch {}
+              })            } catch {}
           })
         }
       }
@@ -271,13 +303,16 @@ export function MapView() {
     try {
       const stray: L.Marker[] = []
       map.eachLayer((l: any) => {
-        if (l instanceof L.Marker) stray.push(l)
+        if (l instanceof L.Marker && !(l.options && l.options.textMarker)) stray.push(l)
       })
       stray.forEach((m) => {
         try {
           map.removeLayer(m)
           if (clusterEnabledRef.current) cluster.addLayer(m)
           else plain.addLayer(m)
+          if ((m as any).options && (m as any).options.textMarker) {
+            try { (L as any).PM.reInitLayer(m) } catch {}
+          }
         } catch {}
       })
     } catch {}
