@@ -29,7 +29,10 @@ import {
   saveLayers,
   saveView,
   saveStyle,
+  loadDeviceTemplates,
+  saveDeviceTemplates,
   type StoredFeature,
+  type DeviceTemplate,
 } from './storage'
 import {
   createLabelIcon,
@@ -143,6 +146,9 @@ export function MapView() {
   const [editor, setEditor] = useState<LabelEditor | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const noticeRef = useRef<string | null>(null)
+  const [deviceTemplates, setDeviceTemplates] = useState<DeviceTemplate[]>([])
+  const [showDeviceList, setShowDeviceList] = useState(false)
+  const [showDeviceForm, setShowDeviceForm] = useState(false)
 
   const setPlacingMode = useCallback((on: boolean) => {
     placingRef.current = on
@@ -156,6 +162,7 @@ export function MapView() {
     if (!container) return
 
     const store = getStore()
+    setDeviceTemplates(loadDeviceTemplates(store))
 
     const w = container.clientWidth || window.innerWidth
     const h = container.clientHeight || window.innerHeight
@@ -639,8 +646,141 @@ export function MapView() {
         >
           Label
         </button>
+        <button
+          type="button"
+          className="floating-btn"
+          onClick={() => setShowDeviceList(!showDeviceList)}
+          title="Tampilkan template perangkat"
+        >
+          Perangkat
+        </button>
         {placing && <span className="floating-hint">Klik peta untuk menaruh label (Esc batal)</span>}
       </div>
+
+      {showDeviceList && (
+        <div className="device-list-popup">
+          <div className="device-list-header">
+            <h3>Template Perangkat</h3>
+            <button type="button" onClick={() => setShowDeviceList(false)}>✕</button>
+          </div>
+          <div className="device-list-content">
+            {deviceTemplates.length === 0 ? (
+              <p>Belum ada template. Klik "Buat Template" untuk menambah.</p>
+            ) : (
+              deviceTemplates.map((t) => (
+                <div key={t.id} className="device-item">
+                  <strong>{t.name}</strong> <span className="device-tag">{t.tag}</span>
+                  <br />
+                  <small>{t.brand}</small>
+                </div>
+              ))
+            )}
+          </div>
+          <button
+            type="button"
+            className="device-add-btn"
+            onClick={() => {
+              setShowDeviceForm(true)
+              setShowDeviceList(false)
+            }}
+          >
+            + Buat Template
+          </button>
+        </div>
+      )}
+
+      {showDeviceForm && (
+        <div className="device-form-popup">
+          <div className="device-form-header">
+            <h3>Buat Template Perangkat</h3>
+            <button type="button" onClick={() => setShowDeviceForm(false)}>✕</button>
+          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              const form = e.target as HTMLFormElement
+              const data = new FormData(form)
+              const template: DeviceTemplate = {
+                id: newId(),
+                name: data.get('name') as string,
+                tag: data.get('tag') as string,
+                brand: data.get('brand') as string,
+                specs: {},
+              }
+              const ports = data.get('ports') as string
+              const pon = data.get('pon') as string
+              const uplink = data.get('uplink') as string
+              const series = data.get('series') as string
+              if (ports) template.specs.ports = ports
+              if (pon) template.specs.pon = pon
+              if (uplink) template.specs.uplink = uplink
+              if (series) template.specs.series = series
+
+              const newTemplates = [...deviceTemplates, template]
+              setDeviceTemplates(newTemplates)
+              saveDeviceTemplates(getStore(), newTemplates)
+              setShowDeviceForm(false)
+              setShowDeviceList(true)
+            }}
+          >
+            <label>
+              Nama Perangkat:
+              <input
+                type="text"
+                name="name"
+                required
+                placeholder="Misal: Huawei ONT"
+              />
+            </label>
+            <label>
+              Tag:
+              <input
+                type="text"
+                name="tag"
+                required
+                placeholder="ONT / OLT / Router / Switch"
+              />
+            </label>
+            <label>
+              Brand:
+              <input
+                type="text"
+                name="brand"
+                required
+                placeholder="Huawei / Mikrotik / ZTE"
+              />
+            </label>
+            <label>
+              Ports (opsional):
+              <input
+                type="text"
+                name="ports"
+                placeholder="4 / 8 / 16"
+              />
+            </label>
+            <label>
+              PON (opsional):
+              <input type="text" name="pon" placeholder="4PON / 8PON" />
+            </label>
+            <label>
+              Uplink (opsional):
+              <input type="text" name="uplink" placeholder="4 / 2" />
+            </label>
+            <label>
+              Series (opsional):
+              <input type="text" name="series" placeholder="HG8245H / RB750" />
+            </label>
+            <div className="device-form-actions">
+              <button type="submit" className="device-form-save">
+                Simpan
+              </button>
+              <button type="button" onClick={() => setShowDeviceForm(false)}>
+                Batal
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   )
 }

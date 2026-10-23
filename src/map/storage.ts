@@ -14,6 +14,7 @@ export const LAYERS_KEY = 'netmap-p1-layers'
 export const VIEW_KEY = 'netmap-p1-view'
 export const CLUSTER_KEY = 'netmap-p1-cluster'
 export const STYLE_KEY = 'netmap-p1-style'
+export const DEVICE_TEMPLATES_KEY = 'netmap-p2-device-templates'
 
 export const BACKUP_LEGACY_KEY = `${LAYERS_KEY}.bak-v1`
 export const BACKUP_ERROR_KEY = `${LAYERS_KEY}.bak-error`
@@ -325,5 +326,34 @@ export function saveStyle(store: Store, style: string): void {
     store.setItem(STYLE_KEY, style)
   } catch (err) {
     console.warn('[netmap] gagal menyimpan style:', err)
+  }
+}
+
+// ===== Device Templates (Phase 2) =====
+export interface DeviceTemplate {
+  id: string
+  name: string
+  tag: string
+  brand: string
+  specs: Record<string, string | number>
+}
+
+export function loadDeviceTemplates(store: Store): DeviceTemplate[] {
+  if (!store) return []
+  try {
+    const raw = store.getItem(DEVICE_TEMPLATES_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch (err) {
+    console.warn('[netmap] gagal load device templates:', err)
+    return []
+  }
+}
+
+export function saveDeviceTemplates(store: Store, templates: DeviceTemplate[]): void {
+  if (!store) return
+  try {
+    store.setItem(DEVICE_TEMPLATES_KEY, JSON.stringify(templates))
+  } catch (err) {
+    console.warn('[netmap] gagal save device templates:', err)
   }
 }
