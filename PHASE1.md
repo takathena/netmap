@@ -6,11 +6,13 @@ Menampilkan peta (Leaflet + StadiaMaps) beserta fitur bawaan plugin
 
 ## Scope (hanya ini)
 - Peta Leaflet + tile StadiaMaps (2 style: alidade_satellite, alidade_bright).
-- Peta tanpa batasan wilayah: render 1 dunia, noWrap (tanpa duplikat tile),
-  maxZoom 19.
+- Render 2 dunia (wrap, tanpa batasan wilayah), minZoom dinamis (2 dunia
+  mengisi layar), worldCopyJump aktif, maxZoom 19.
 - Geoman: toolbar gambar/edit (titik, garis, poligon, persegi, lingkaran, edit,
   drag, cut, hapus). Marker hasil gambar masuk marker cluster group.
 - MarkerCluster: clustering marker (chunked loading).
+- Restore otomatis: layers (GeoJSON) + view (center/zoom) dari localStorage
+  saat refresh; jika ada layers, fitBounds ke layers tersebut.
 - UI minimal ala tldraw: peta full-screen, tanpa header/panel berat.
 
 ## TIDAK dikerjakan di Fase 1
