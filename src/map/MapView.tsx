@@ -72,10 +72,18 @@ export function MapView() {
   const swapRef = useRef<((key: StyleKey) => void) | null>(null)
   const clusterRef = useRef<any>(null)
   const [activeStyle, setActiveStyle] = useState<StyleKey>('satellite')
-  const [clusterEnabled, setClusterEnabled] = useState(true)
+  const initialCluster = (() => {
+    try {
+      const v = localStorage.getItem('netmap-p1-cluster')
+      if (v === '0') return false
+      if (v === '1') return true
+    } catch {}
+    return true
+  })()
+  const [clusterEnabled, setClusterEnabled] = useState(initialCluster)
   const plainRef = useRef<L.LayerGroup | null>(null)
   const toggleRef = useRef<(() => void) | null>(null)
-  const clusterEnabledRef = useRef(true)
+  const clusterEnabledRef = useRef(initialCluster)
 
   useEffect(() => {
     const container = containerRef.current
@@ -165,6 +173,7 @@ export function MapView() {
       const next = !clusterEnabledRef.current
       clusterEnabledRef.current = next
       setClusterEnabled(next)
+      try { localStorage.setItem('netmap-p1-cluster', next ? '1' : '0') } catch {}
       const from = next ? plain : cluster
       const to = next ? cluster : plain
       from.getLayers().forEach((l: any) => {
@@ -226,20 +235,51 @@ export function MapView() {
       if (raw) {
         const features = JSON.parse(raw)
         if (Array.isArray(features) && features.length) {
-          const geo = L.geoJSON(features, {
-            onEachFeature: (_f, layer) => {
-              try {
-                ;(layer as any).pm?.enable?.()
-              } catch {}
-            },
+          features.forEach((f: any) => {
+            try {
+              const g = L.geoJSON(f, {
+                onEachFeature: (_feat, layer) => {
+                  try { (layer as any).pm?.enable?.() } catch {}
+                },
+              })
+              const ls = g.getLayers()
+              ls.forEach((layer: any) => {
+                try {
+                  if (layer instanceof L.Marker) {
+                    if (clusterEnabledRef.current) cluster.addLayer(layer)
+                    else plain.addLayer(layer)
+                  } else {
+                    map.addLayer(layer)
+                  }
+                  try {
+                    const b = (layer.getBounds ? layer.getBounds() : null)
+                    if (b && b.isValid()) {
+                      if (!restoredBounds) restoredBounds = b
+                      else restoredBounds.extend(b)
+                    }
+                  } catch {}
+                } catch {}
+              })
+            } catch {}
           })
-          geo.addTo(map)
-          try {
-            const b = geo.getBounds()
-            if (b.isValid()) restoredBounds = b
-          } catch {}
         }
       }
+    } catch {}
+
+    // Stray marker cleanup: marker yang menempel langsung di map (data lama)
+    // dipindahkan ke group aktif agar ikut toggle.
+    try {
+      const stray: L.Marker[] = []
+      map.eachLayer((l: any) => {
+        if (l instanceof L.Marker) stray.push(l)
+      })
+      stray.forEach((m) => {
+        try {
+          map.removeLayer(m)
+          if (clusterEnabledRef.current) cluster.addLayer(m)
+          else plain.addLayer(m)
+        } catch {}
+      })
     } catch {}
 
     try {
