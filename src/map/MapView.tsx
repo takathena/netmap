@@ -12,6 +12,31 @@ const STADIA_KEY = import.meta.env.VITE_STADIA_API_KEY as string | undefined
 // Tapi peta TIDAK dikunci — bebas scroll/zoom/geser (tanpa maxBounds/minZoom lock).
 const INDONESIA_BOUNDS = L.latLngBounds([-12, 92], [8, 142])
 
+// Min zoom dinamis: zoom terendah di mana seluruh Indonesia muat di layar
+// (dengan padding) — supaya Indonesia terlihat penuh, tidak terpotong,
+// dan zoom out tidak sampai menampilkan seluruh dunia.
+// (Panning tetap bebas: tidak ada maxBounds lock.)
+function computeMinZoom(width: number, height: number): number {
+  const d = Math.PI / 180
+  const northY = Math.log(Math.tan(Math.PI / 4 + (INDONESIA_BOUNDS.getNorth() * d) / 2))
+  const southY = Math.log(Math.tan(Math.PI / 4 + (INDONESIA_BOUNDS.getSouth() * d) / 2))
+  const widthFraction = (INDONESIA_BOUNDS.getEast() - INDONESIA_BOUNDS.getWest()) / 360
+  const heightFraction = (northY - southY) / (2 * Math.PI)
+  const pad = 20
+  const availW = Math.max(1, width - pad * 2)
+  const availH = Math.max(1, height - pad * 2)
+  let best = 1
+  for (let zoom = 1; zoom <= 19; zoom++) {
+    const worldPx = 256 * Math.pow(2, zoom)
+    if (widthFraction * worldPx <= availW && heightFraction * worldPx <= availH) {
+      best = zoom
+    } else {
+      break
+    }
+  }
+  return Math.max(1, best)
+}
+
 // Hanya 2 style Stadia sesuai permintaan.
 const STYLES = {
   satellite: {
@@ -52,10 +77,17 @@ export function MapView() {
     const container = containerRef.current
     if (!container) return
 
-    // Bebas: tanpa maxBounds/minZoom lock. Hanya tile Indonesia yang dirender.
+    const w = container.clientWidth || window.innerWidth
+    const h = container.clientHeight || window.innerHeight
+    const minZoom = computeMinZoom(w, h)
+
+    // Bebas scroll/zoom: tidak ada maxBounds lock. Hanya tile Indonesia yang
+    // dirender (tile bounds). minZoom dinamis supaya Indonesia terlihat penuh
+    // dan zoom out tidak sampai menampilkan seluruh dunia.
     const map = L.map(container, {
       center: [1.5, 110],
-      zoom: 5,
+      zoom: minZoom,
+      minZoom,
       maxZoom: 19,
       zoomControl: true,
       preferCanvas: true,
@@ -201,6 +233,16 @@ export function MapView() {
         map.fitBounds(restoredBounds, { padding: [40, 40], maxZoom: 16 })
       }
     } catch {}
+
+    // Resize -> hitung ulang minZoom (fit Indonesia)
+    map.on('resize', () => {
+      const minZ = computeMinZoom(
+        container.clientWidth || w,
+        container.clientHeight || h,
+      )
+      map.setMinZoom(minZ)
+      if (map.getZoom() < minZ) map.setZoom(minZ)
+    })
 
     return () => {
       map.remove()
