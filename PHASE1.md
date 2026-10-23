@@ -6,9 +6,8 @@ Menampilkan peta (Leaflet + StadiaMaps) beserta fitur bawaan plugin
 
 ## Scope (hanya ini)
 - Peta Leaflet + tile StadiaMaps (2 style: alidade_satellite, alidade_bright).
-- Fokus Indonesia saja: maxBounds + tile bounds = Indonesia (+sedikit sekitar),
-  noWrap (tanpa duplikat), minZoom dinamis (Indonesia mengisi layar),
-  maxZoom 19. Selain Indonesia tidak dirender & tidak bisa di-scroll.
+- Hanya tile Indonesia yang dirender (tile bounds = bbox Indonesia); peta
+  bebas scroll/zoom/geser (tanpa maxBounds/minZoom lock, noWrap).
 - Geoman: toolbar gambar/edit (titik, garis, poligon, persegi, lingkaran, edit,
   drag, cut, hapus). Marker hasil gambar masuk marker cluster group.
 - MarkerCluster: clustering marker (chunked loading).
