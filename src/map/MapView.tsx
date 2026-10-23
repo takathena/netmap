@@ -151,6 +151,7 @@ export function MapView() {
       drawPolygon: true,
       drawRectangle: true,
       drawCircle: true,
+      drawText: true,
       editMode: true,
       dragMode: true,
       cutPolygon: true,
@@ -211,14 +212,22 @@ export function MapView() {
           .map((l: any) => {
             if (typeof l.toGeoJSON !== 'function') return null
             const f = l.toGeoJSON()
-            // Preserve geoman text marker options (text content, centered, etc.)
-            // so restored text doesn't degrade into a plain marker.
-            if (l instanceof L.Marker && l.options && (l.options as any).textMarker) {
-              f.properties = f.properties || {}
-              f.properties.textMarker = true
-              if ((l.options as any).text != null) f.properties.text = (l.options as any).text
-              if ((l.options as any).textMarkerCentered) f.properties.textMarkerCentered = true
-              if ((l.options as any).textOptions) f.properties.textOptions = (l.options as any).textOptions
+            // Preserve text for both geoman text markers and DivIcon string labels
+            f.properties = f.properties || {}
+            if (l instanceof L.Marker) {
+              if ((l.options as any).textMarker) {
+                // Geoman text marker: preserve original properties
+                f.properties.textMarker = true
+                if ((l.options as any).text != null) f.properties.text = (l.options as any).text
+                if ((l.options as any).textMarkerCentered) f.properties.textMarkerCentered = true
+                if ((l.options as any).textOptions) f.properties.textOptions = (l.options as any).textOptions
+              } else if ((l.options as any).netmapText) {
+                // DivIcon string label (Option B): store text in properties
+                f.properties.text = (l.options as any).netmapText
+              } else if (l.options && l.options.text != null) {
+                // Generic text option (fallback)
+                f.properties.text = l.options.text
+              }
             }
             return f
           })
@@ -253,6 +262,16 @@ export function MapView() {
               const g = L.geoJSON(f, {
                 pointToLayer: (feature: any, latlng: any) => {
                   const p = (feature && feature.properties) || {}
+                  const text = p.text || p.label
+                  if (text) {
+                    const icon = L.divIcon({
+                      className: 'netmap-text-marker',
+                      html: `<span class="netmap-text-label">${String(text).replace(/</g, '&lt;')}</span>`,
+                      iconSize: [0, 0],
+                      iconAnchor: [0, 0],
+                    })
+                    return L.marker(latlng, { icon, netmapText: text } as any)
+                  }
                   if (p.textMarker) {
                     return L.marker(latlng, {
                       textMarker: true,
@@ -270,13 +289,15 @@ export function MapView() {
               const ls = g.getLayers()
               ls.forEach((layer: any) => {
                 try {
-                  const isText = !!(layer && layer.options && layer.options.textMarker)
+                  const isText = !!(layer && layer.options && ((layer as any).options.netmapText || layer.options.textMarker))
                   if (layer instanceof L.Marker) {
                     if (isText) {
-                      // Text marker: keep on map (not clustered) and re-init so
-                      // the text renders instead of a plain marker.
-                      map.addLayer(layer)
+                      // Text/label → DivIcon string: tampil & bisa di-cluster.
+                      // reInitLayer (pm) dipanggil agar layer bisa di-remove
+                      // (removalMode). Icon DivIcon string tidak diubah.
                       try { (L as any).PM.reInitLayer(layer) } catch {}
+                      if (clusterEnabledRef.current) cluster.addLayer(layer)
+                      else plain.addLayer(layer)
                     } else {
                       if (clusterEnabledRef.current) cluster.addLayer(layer)
                       else plain.addLayer(layer)
@@ -303,14 +324,14 @@ export function MapView() {
     try {
       const stray: L.Marker[] = []
       map.eachLayer((l: any) => {
-        if (l instanceof L.Marker && !(l.options && l.options.textMarker)) stray.push(l)
+        if (l instanceof L.Marker) stray.push(l)
       })
       stray.forEach((m) => {
         try {
           map.removeLayer(m)
           if (clusterEnabledRef.current) cluster.addLayer(m)
           else plain.addLayer(m)
-          if ((m as any).options && (m as any).options.textMarker) {
+          if ((m as any).options && ((m as any).options.textMarker || (m as any).options.netmapText)) {
             try { (L as any).PM.reInitLayer(m) } catch {}
           }
         } catch {}
