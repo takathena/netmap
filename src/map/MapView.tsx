@@ -1,18 +1,12 @@
-<<<<<<< HEAD
 import { useCallback, useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-=======
-import { useEffect, useRef, useState } from 'react'
-import L from 'leaflet'
->>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4
 import '@geoman-io/leaflet-geoman-free'
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css'
 import 'leaflet.markercluster'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 
-<<<<<<< HEAD
 // Fix default marker icon in prod builds (Q-4)
 import iconUrl from 'leaflet/dist/images/marker-icon.png'
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
@@ -53,10 +47,6 @@ if (!STADIA_KEY || STADIA_KEY === 'your_stadia_api_key_here') {
   console.warn('[netmap] VITE_STADIA_API_KEY tidak ada atau belum diatur di .env. Tile mungkin terbatas.')
 }
 
-=======
-const STADIA_KEY = import.meta.env.VITE_STADIA_API_KEY as string | undefined
-
->>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4
 // Hanya Indonesia (+sedikit sekitar): tile di luar ini tidak pernah diunduh.
 // Tapi peta TIDAK dikunci — bebas scroll/zoom/geser (tanpa maxBounds/minZoom lock).
 const INDONESIA_BOUNDS = L.latLngBounds([-12, 92], [8, 142])
@@ -103,7 +93,6 @@ type StyleKey = keyof typeof STYLES
 const ATTRIBUTION =
   '&copy; Stadia Maps &copy; OpenMapTiles &copy; OpenStreetMap contributors'
 
-<<<<<<< HEAD
 // ---------------------------------------------------------------- tipe
 
 // Batas tipe ke plugin: hanya antarmuka kecil yang kita pakai.
@@ -161,48 +150,13 @@ export function MapView() {
     containerRef.current?.classList.toggle('netmap-placing', on)
     if (on) apiRef.current?.cancelDraw()
   }, [])
-=======
-function debounce(fn: (...args: any[]) => void, ms: number) {
-  let t: number | undefined
-  return (...args: any[]) => {
-    if (t) window.clearTimeout(t)
-    t = window.setTimeout(() => fn(...args), ms)
-  }
-}
-
-const LAYERS_KEY = 'netmap-p1-layers'
-const VIEW_KEY = 'netmap-p1-view'
-
-export function MapView() {
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  const mapRef = useRef<L.Map | null>(null)
-  const tileRef = useRef<L.TileLayer | null>(null)
-  const swapRef = useRef<((key: StyleKey) => void) | null>(null)
-  const clusterRef = useRef<any>(null)
-  const [activeStyle, setActiveStyle] = useState<StyleKey>('satellite')
-  const initialCluster = (() => {
-    try {
-      const v = localStorage.getItem('netmap-p1-cluster')
-      if (v === '0') return false
-      if (v === '1') return true
-    } catch {}
-    return true
-  })()
-  const [clusterEnabled, setClusterEnabled] = useState(initialCluster)
-  const plainRef = useRef<L.LayerGroup | null>(null)
-  const toggleRef = useRef<(() => void) | null>(null)
-  const clusterEnabledRef = useRef(initialCluster)
->>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4
 
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
 
-<<<<<<< HEAD
     const store = getStore()
 
-=======
->>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4
     const w = container.clientWidth || window.innerWidth
     const h = container.clientHeight || window.innerHeight
     const minZoom = computeMinZoom(w, h)
@@ -220,15 +174,10 @@ export function MapView() {
       attributionControl: true,
       worldCopyJump: false,
     })
-<<<<<<< HEAD
-=======
-    mapRef.current = map
->>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4
 
     // Tampilan awal: fit Indonesia (sekali, bukan lock)
     map.fitBounds(INDONESIA_BOUNDS, { padding: [20, 20], maxZoom: 6 })
 
-<<<<<<< HEAD
     let tileLayer: L.TileLayer | null = null
     function swap(key: StyleKey) {
       if (tileLayer) {
@@ -238,21 +187,11 @@ export function MapView() {
       const s = STYLES[key]
       const url = STADIA_KEY ? `${s.url}?api_key=${STADIA_KEY}` : s.url
       tileLayer = L.tileLayer(url, {
-=======
-    function swap(key: StyleKey) {
-      const m = mapRef.current
-      if (!m) return
-      if (tileRef.current) m.removeLayer(tileRef.current)
-      const s = STYLES[key]
-      const url = STADIA_KEY ? `${s.url}?api_key=${STADIA_KEY}` : s.url
-      const layer = L.tileLayer(url, {
->>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4
         maxZoom: 19,
         noWrap: true,
         bounds: INDONESIA_BOUNDS,
         attribution: ATTRIBUTION,
       })
-<<<<<<< HEAD
       tileLayer.on('tileerror', (e: L.TileErrorEvent) => {
         console.error('[netmap] tile load error:', e)
         const status = e.error && typeof e.error === 'object' && 'status' in e.error ? (e.error as { status?: number }).status : undefined
@@ -271,22 +210,10 @@ export function MapView() {
     const cluster = (
       L as unknown as { markerClusterGroup(options: object): ClusterGroup }
     ).markerClusterGroup({
-=======
-      layer.addTo(m)
-      tileRef.current = layer
-      setActiveStyle(key)
-    }
-    swapRef.current = swap
-    swap('satellite')
-
-    // Cluster group (ringan, chunked loading)
-    const cluster = (L as any).markerClusterGroup({
->>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4
       chunkedLoading: true,
       maxClusterRadius: 40,
     })
     map.addLayer(cluster)
-<<<<<<< HEAD
     const plain = L.layerGroup().addTo(map)
 
     // Geoman: toolbar bawaan plugin. Sesuai PHASE1.md hanya titik, garis,
@@ -294,16 +221,6 @@ export function MapView() {
     // "Label" buatan sendiri (satu representasi teks, lihat layers.ts);
     // circle marker & rotate tidak ada di scope Fase 1.
     const pm = (map as unknown as { pm: PmMap }).pm
-=======
-    clusterRef.current = cluster
-
-    // Layer biasa untuk marker saat cluster dimatikan
-    const plain = L.layerGroup().addTo(map)
-    plainRef.current = plain
-
-    // Geoman: toolbar mengambang bawaan plugin
-    const pm = (map as any).pm
->>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4
     pm.addControls({
       position: 'topleft',
       drawMarker: true,
@@ -311,17 +228,12 @@ export function MapView() {
       drawPolygon: true,
       drawRectangle: true,
       drawCircle: true,
-<<<<<<< HEAD
       drawCircleMarker: false,
       drawText: false,
-=======
-      drawText: true,
->>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4
       editMode: true,
       dragMode: true,
       cutPolygon: true,
       removalMode: true,
-<<<<<<< HEAD
       rotateMode: false,
     })
 
@@ -603,215 +515,10 @@ export function MapView() {
     // Resize -> hitung ulang minZoom (fit Indonesia)
     map.on('resize', () => {
       const minZ = computeMinZoom(container.clientWidth || w, container.clientHeight || h)
-=======
-    })
-
-    // Wiring minimal: marker hasil gambar geoman masuk cluster/plain sesuai toggle
-    map.on('pm:create', (e: any) => {
-      const layer = e.layer
-      if (layer instanceof L.Marker) {
-        map.removeLayer(layer)
-        if (clusterEnabledRef.current) cluster.addLayer(layer)
-        else plain.addLayer(layer)
-      }
-      saveState()
-    })
-
-    // Toggle cluster on/off
-    toggleRef.current = () => {
-      const next = !clusterEnabledRef.current
-      clusterEnabledRef.current = next
-      setClusterEnabled(next)
-      try { localStorage.setItem('netmap-p1-cluster', next ? '1' : '0') } catch {}
-      const from = next ? plain : cluster
-      const to = next ? cluster : plain
-      from.getLayers().forEach((l: any) => {
-        from.removeLayer(l)
-        to.addLayer(l)
-      })
-    }
-
-    // Simpan state (layers + view) ke localStorage
-    function collectLayers() {
-      const set = new Set<any>()
-      try {
-        ;(map as any).pm.getGeomanLayers().forEach((l: any) => set.add(l))
-      } catch {}
-      try {
-        cluster.getLayers().forEach((l: any) => set.add(l))
-      } catch {}
-      map.eachLayer((l: any) => {
-        if (
-          l instanceof L.Marker ||
-          l instanceof L.Polyline ||
-          l instanceof L.Polygon ||
-          l instanceof L.Circle ||
-          l instanceof L.Rectangle
-        ) {
-          set.add(l)
-        }
-      })
-      return [...set]
-    }
-
-    const saveState = debounce(() => {
-      try {
-        const features = collectLayers()
-          .map((l: any) => {
-            if (typeof l.toGeoJSON !== 'function') return null
-            const f = l.toGeoJSON()
-            // Preserve text for both geoman text markers and DivIcon string labels
-            f.properties = f.properties || {}
-            if (l instanceof L.Marker) {
-              if ((l.options as any).textMarker) {
-                // Geoman text marker: preserve original properties
-                f.properties.textMarker = true
-                if ((l.options as any).text != null) f.properties.text = (l.options as any).text
-                if ((l.options as any).textMarkerCentered) f.properties.textMarkerCentered = true
-                if ((l.options as any).textOptions) f.properties.textOptions = (l.options as any).textOptions
-              } else if ((l.options as any).netmapText) {
-                // DivIcon string label (Option B): store text in properties
-                f.properties.text = (l.options as any).netmapText
-              } else if (l.options && l.options.text != null) {
-                // Generic text option (fallback)
-                f.properties.text = l.options.text
-              }
-            }
-            return f
-          })
-          .filter(Boolean)
-        localStorage.setItem(LAYERS_KEY, JSON.stringify(features))
-      } catch {}
-      try {
-        const c = map.getCenter()
-        localStorage.setItem(
-          VIEW_KEY,
-          JSON.stringify({ lat: c.lat, lng: c.lng, zoom: map.getZoom() }),
-        )
-      } catch {}
-    }, 400)
-
-    map.on('moveend', saveState)
-    map.on('zoomend', saveState)
-    map.on('pm:remove', saveState)
-    map.on('pm:edit', saveState)
-    map.on('pm:drag', saveState)
-    map.on('pm:cut', saveState)
-
-    // Restore layers + view dari localStorage
-    let restoredBounds: L.LatLngBounds | null = null
-    try {
-      const raw = localStorage.getItem(LAYERS_KEY)
-      if (raw) {
-        const features = JSON.parse(raw)
-        if (Array.isArray(features) && features.length) {
-          features.forEach((f: any) => {
-            try {
-              const g = L.geoJSON(f, {
-                pointToLayer: (feature: any, latlng: any) => {
-                  const p = (feature && feature.properties) || {}
-                  const text = p.text || p.label
-                  if (text) {
-                    const icon = L.divIcon({
-                      className: 'netmap-text-marker',
-                      html: `<span class="netmap-text-label">${String(text).replace(/</g, '&lt;')}</span>`,
-                      iconSize: [0, 0],
-                      iconAnchor: [0, 0],
-                    })
-                    return L.marker(latlng, { icon, netmapText: text } as any)
-                  }
-                  if (p.textMarker) {
-                    return L.marker(latlng, {
-                      textMarker: true,
-                      text: p.text || '',
-                      textMarkerCentered: !!p.textMarkerCentered,
-                      textOptions: p.textOptions,
-                    } as any)
-                  }
-                  return L.marker(latlng)
-                },
-                onEachFeature: (_feat, layer) => {
-                  try { (layer as any).pm?.enable?.() } catch {}
-                },
-              })
-              const ls = g.getLayers()
-              ls.forEach((layer: any) => {
-                try {
-                  const isText = !!(layer && layer.options && ((layer as any).options.netmapText || layer.options.textMarker))
-                  if (layer instanceof L.Marker) {
-                    if (isText) {
-                      // Text/label → DivIcon string: tampil & bisa di-cluster.
-                      // reInitLayer (pm) dipanggil agar layer bisa di-remove
-                      // (removalMode). Icon DivIcon string tidak diubah.
-                      try { (L as any).PM.reInitLayer(layer) } catch {}
-                      if (clusterEnabledRef.current) cluster.addLayer(layer)
-                      else plain.addLayer(layer)
-                    } else {
-                      if (clusterEnabledRef.current) cluster.addLayer(layer)
-                      else plain.addLayer(layer)
-                    }
-                  } else {
-                    map.addLayer(layer)
-                  }
-                  try {
-                    const b = (layer.getBounds ? layer.getBounds() : null)
-                    if (b && b.isValid()) {
-                      if (!restoredBounds) restoredBounds = b
-                      else restoredBounds.extend(b)
-                    }
-                  } catch {}
-                } catch {}
-              })            } catch {}
-          })
-        }
-      }
-    } catch {}
-
-    // Stray marker cleanup: marker yang menempel langsung di map (data lama)
-    // dipindahkan ke group aktif agar ikut toggle.
-    try {
-      const stray: L.Marker[] = []
-      map.eachLayer((l: any) => {
-        if (l instanceof L.Marker) stray.push(l)
-      })
-      stray.forEach((m) => {
-        try {
-          map.removeLayer(m)
-          if (clusterEnabledRef.current) cluster.addLayer(m)
-          else plain.addLayer(m)
-          if ((m as any).options && ((m as any).options.textMarker || (m as any).options.netmapText)) {
-            try { (L as any).PM.reInitLayer(m) } catch {}
-          }
-        } catch {}
-      })
-    } catch {}
-
-    try {
-      const rawView = localStorage.getItem(VIEW_KEY)
-      if (rawView) {
-        const v = JSON.parse(rawView)
-        if (restoredBounds) {
-          map.fitBounds(restoredBounds, { padding: [40, 40], maxZoom: 16 })
-        } else if (Number.isFinite(v.lat) && Number.isFinite(v.lng) && Number.isFinite(v.zoom)) {
-          map.setView([v.lat, v.lng], v.zoom)
-        }
-      } else if (restoredBounds) {
-        map.fitBounds(restoredBounds, { padding: [40, 40], maxZoom: 16 })
-      }
-    } catch {}
-
-    // Resize -> hitung ulang minZoom (fit Indonesia)
-    map.on('resize', () => {
-      const minZ = computeMinZoom(
-        container.clientWidth || w,
-        container.clientHeight || h,
-      )
->>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4
       map.setMinZoom(minZ)
       if (map.getZoom() < minZ) map.setZoom(minZ)
     })
 
-<<<<<<< HEAD
     // ---------------------------------------------------- Flush & keyboard
     const onPageHide = () => flush()
     const onVisibility = () => {
@@ -858,21 +565,6 @@ export function MapView() {
     <div className="map-root">
       <div ref={containerRef} className="map-canvas" />
 
-=======
-    return () => {
-      map.remove()
-      mapRef.current = null
-      tileRef.current = null
-      swapRef.current = null
-      clusterRef.current = null
-      plainRef.current = null
-      toggleRef.current = null
-    }
-  }, [])
-
-  return (
-    <div ref={containerRef} className="map-container">
->>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4
       <div className="style-switcher">
         <button
           type="button"
@@ -890,7 +582,6 @@ export function MapView() {
         </button>
       </div>
 
-<<<<<<< HEAD
       {notice && (
         <div className="notice" role="alert">
           <span>{notice}</span>
@@ -928,22 +619,15 @@ export function MapView() {
         </div>
       )}
 
-=======
->>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4
       <div className="floating-bar">
         <button
           type="button"
           className={`floating-btn ${clusterEnabled ? 'active' : ''}`}
-<<<<<<< HEAD
           onClick={() => apiRef.current?.setCluster(!clusterEnabled)}
-=======
-          onClick={() => toggleRef.current?.()}
->>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4
           title="Aktifkan/nonaktifkan clustering marker"
         >
           Cluster: {clusterEnabled ? 'ON' : 'OFF'}
         </button>
-<<<<<<< HEAD
         <button
           type="button"
           className={`floating-btn ${placing ? 'active' : ''}`}
@@ -960,9 +644,3 @@ export function MapView() {
     </div>
   )
 }
-=======
-      </div>
-    </div>
-  )
-}
->>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4

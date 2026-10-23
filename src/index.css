@@ -126,7 +126,6 @@ body,
 ::-webkit-scrollbar-thumb {
   background: #334155;
   border-radius: 3px;
-<<<<<<< HEAD
 }
 /* ---- Tahap 1.1: struktur peta, label, editor, notifikasi ---- */
 
@@ -243,6 +242,3 @@ body,
   color: #fee2e2;
   font-size: 12px;
 }
-=======
-}
->>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4
