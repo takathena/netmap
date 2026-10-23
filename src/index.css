@@ -38,7 +38,14 @@ body,
   max-width: none !important;
 }
 
-/* Switcher style peta (2 opsi) - floating kecil di pojok kanan atas */
+/* Geoman toolbar: floating bar (tampilan sederhana) */
+.leaflet-pm-toolbar {
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+/* Switcher style peta (2 opsi) */
 .style-switcher {
   position: absolute;
   top: 10px;
@@ -78,9 +85,13 @@ body,
   color: #94a3b8;
   font-size: 14px;
 }
+
+/* Sembunyikan scrollbar yang tidak perlu */
+::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #334155;
   border-radius: 3px;
