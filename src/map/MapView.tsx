@@ -8,8 +8,9 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 
 const STADIA_KEY = import.meta.env.VITE_STADIA_API_KEY as string | undefined
 
-// 1 dunia penuh (Web Mercator): tidak ada duplikat, tidak bisa scroll keluar.
-const WORLD_BOUNDS = L.latLngBounds([-85.05112878, -180], [85.05112878, 180])
+// Indonesia (+sedikit sekitar). Tile di luar ini tidak pernah diunduh;
+// panning terkunci ke area ini (ringan, hanya Indonesia yang dirender).
+const INDONESIA_BOUNDS = L.latLngBounds([-12, 92], [8, 142])
 
 // Hanya 2 style Stadia sesuai permintaan.
 const STYLES = {
@@ -28,11 +29,14 @@ type StyleKey = keyof typeof STYLES
 const ATTRIBUTION =
   '&copy; Stadia Maps &copy; OpenMapTiles &copy; OpenStreetMap contributors'
 
-// Min zoom dinamis: zoom terendah di mana 1 dunia mengisi layar
-// (menghindari tepi abu-abu, tanpa duplikat).
+// Min zoom dinamis: zoom terendah di mana 1 wilayah Indonesia mengisi layar
+// (menghindari tepi abu-abu; hanya Indonesia yang dirender).
 function computeMinZoom(width: number, height: number): number {
-  const widthFraction = 1.0
-  const heightFraction = 1.0
+  const d = Math.PI / 180
+  const northY = Math.log(Math.tan(Math.PI / 4 + (INDONESIA_BOUNDS.getNorth() * d) / 2))
+  const southY = Math.log(Math.tan(Math.PI / 4 + (INDONESIA_BOUNDS.getSouth() * d) / 2))
+  const widthFraction = (INDONESIA_BOUNDS.getEast() - INDONESIA_BOUNDS.getWest()) / 360
+  const heightFraction = (northY - southY) / (2 * Math.PI)
   for (let zoom = 1; zoom <= 19; zoom += 1) {
     const worldPx = 256 * Math.pow(2, zoom)
     if (widthFraction * worldPx >= width && heightFraction * worldPx >= height) {
@@ -72,7 +76,7 @@ export function MapView() {
     const map = L.map(container, {
       center: [1.5, 110],
       zoom: Math.max(minZoom, 2),
-      maxBounds: WORLD_BOUNDS,
+      maxBounds: INDONESIA_BOUNDS,
       maxBoundsViscosity: 1.0,
       minZoom,
       maxZoom: 19,
@@ -92,6 +96,7 @@ export function MapView() {
       const layer = L.tileLayer(url, {
         maxZoom: 19,
         noWrap: true,
+        bounds: INDONESIA_BOUNDS,
         attribution: ATTRIBUTION,
       })
       layer.addTo(m)
