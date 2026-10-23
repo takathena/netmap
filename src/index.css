@@ -38,11 +38,34 @@ body,
   max-width: none !important;
 }
 
-/* Geoman toolbar: floating bar (tampilan sederhana) */
-.leaflet-pm-toolbar {
+/* Switcher style peta (2 opsi) - floating kecil di pojok kanan atas */
+.style-switcher {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(11, 18, 32, 0.8);
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-  overflow: hidden;
+  backdrop-filter: blur(4px);
+}
+
+.style-btn {
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-size: 12px;
+}
+
+.style-btn.active {
+  background: #34d399;
+  color: #0b1220;
+  font-weight: 600;
 }
 
 /* Sembunyikan scrollbar yang tidak perlu */
