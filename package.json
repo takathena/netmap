@@ -7,8 +7,12 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+<<<<<<< HEAD
     "preview": "vite preview",
     "test": "vitest"
+=======
+    "preview": "vite preview"
+>>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4
   },
   "dependencies": {
     "@geoman-io/leaflet-geoman-free": "^2.20.4",
@@ -24,10 +28,16 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+<<<<<<< HEAD
     "@vitest/ui": "^5.0.5",
     "oxlint": "^1.88.0",
     "typescript": "~6.0.3",
     "vite": "^8.3.4",
     "vitest": "^5.0.5"
+=======
+    "oxlint": "^1.88.0",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.4"
+>>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4
   }
 }

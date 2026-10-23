@@ -1,5 +1,6 @@
 # Changelog — netmap
 
+<<<<<<< HEAD
 ## Tahap 1.3 — Test Infrastructure (2026-10-23)
 
 ### Ditambahkan
@@ -20,6 +21,8 @@
 - Test script: `npm test` → `vitest`
 - All 44 tests pass.
 
+=======
+>>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4
 ## Fase 1 (2026-10-23)
 
 ### Ditambahkan
@@ -52,6 +55,7 @@ undo/redo, panel properti/asset, floating bar custom, fitur lain.
 ### Keamanan
 - Kunci Stadia (`VITE_STADIA_API_KEY`) disimpan di `.env` (di-`.gitignore`),
   tidak di-commit. Lihat `.env.example`.
+<<<<<<< HEAD
 - Tidak ada token GitHub yang disimpan di repo/config.
 ## Tahap 1.1 — Stabilisasi data (2026-10-23)
 
@@ -122,3 +126,6 @@ Lihat `TAHAP-1.1.md` untuk detail, daftar tes manual, dan batasan verifikasi.
 - Toolbar Geoman: tombol Teks bawaan, Circle Marker, dan Rotate dimatikan (sesuai scope
   `PHASE1.md`); teks kini lewat tombol **Label** di floating bar.
 - Marker teks Geoman kosong dari data lama dibuang saat migrasi.
+=======
+- Tidak ada token GitHub yang disimpan di repo/config.
+>>>>>>> ce9b9ff4ff9f2c43fadf6e13194517be5afddfb4
