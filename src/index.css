@@ -68,8 +68,16 @@ body,
   font-weight: 600;
 }
 
-/* Sembunyikan scrollbar yang tidak perlu */
-::-webkit-scrollbar {
+/* Loading peta (lazy) */
+.map-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 14px;
+}
   width: 6px;
   height: 6px;
 }
