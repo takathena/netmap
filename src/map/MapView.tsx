@@ -149,7 +149,9 @@ export function MapView() {
   const [deviceTemplates, setDeviceTemplates] = useState<DeviceTemplate[]>([])
   const [showDeviceList, setShowDeviceList] = useState(false)
   const [showDeviceForm, setShowDeviceForm] = useState(false)
-  const [pendingMarker, setPendingMarker] = useState<{ layer: L.Marker; latlng: L.LatLng } | null>(null)
+  const [addingDevice, setAddingDevice] = useState(false)
+  const [pendingDevicePoint, setPendingDevicePoint] = useState<L.LatLng | null>(null)
+  const addingDeviceRef = useRef(false)
 
   const setPlacingMode = useCallback((on: boolean) => {
     placingRef.current = on
@@ -391,14 +393,6 @@ export function MapView() {
       if (!layer) return
       const kind = kindOfLayer(layer)
       if (!kind) return
-      
-      if (layer instanceof L.Marker) {
-        // Marker: show template selector first
-        map.removeLayer(layer)
-        setPendingMarker({ layer, latlng: layer.getLatLng() })
-        return
-      }
-      
       register(layer, { id: newId(), kind })
       markDirty()
     })
@@ -434,13 +428,18 @@ export function MapView() {
       markDirty()
     }
 
-    // Klik peta saat mode "Label" aktif -> buka editor teks.
+    // Klik peta saat mode "Label" atau "Perangkat" aktif.
     map.on('click', (e: L.LeafletMouseEvent) => {
-      if (!placingRef.current) return
-      placingRef.current = false
-      setPlacing(false)
-      container.classList.remove('netmap-placing')
-      setEditor({ latlng: [e.latlng.lat, e.latlng.lng], text: '' })
+      if (placingRef.current) {
+        placingRef.current = false
+        setPlacing(false)
+        container.classList.remove('netmap-placing')
+        setEditor({ latlng: [e.latlng.lat, e.latlng.lng], text: '' })
+      } else if (addingDeviceRef.current) {
+        addingDeviceRef.current = false
+        setAddingDevice(false)
+        setPendingDevicePoint(e.latlng)
+      }
     })
 
     // ----------------------------------------------------- Toggle cluster
@@ -658,7 +657,19 @@ export function MapView() {
         >
           Perangkat
         </button>
+        <button
+          type="button"
+          className="floating-btn device-add-btn"
+          onClick={() => {
+            addingDeviceRef.current = true
+            setAddingDevice(true)
+          }}
+          title="Klik tombol ini, lalu klik peta untuk menaruh perangkat baru"
+        >
+          +
+        </button>
         {placing && <span className="floating-hint">Klik peta untuk menaruh label (Esc batal)</span>}
+        {addingDevice && <span className="floating-hint">Klik peta untuk menaruh perangkat (Esc batal)</span>}
       </div>
 
       {showDeviceList && (
@@ -786,11 +797,11 @@ export function MapView() {
         </div>
       )}
 
-      {pendingMarker && (
+      {pendingDevicePoint && (
         <div className="device-selector-popup">
           <div className="device-selector-header">
             <h3>Pilih Template Perangkat</h3>
-            <button type="button" onClick={() => setPendingMarker(null)}>✕</button>
+            <button type="button" onClick={() => setPendingDevicePoint(null)}>✕</button>
           </div>
           <div className="device-selector-list">
             {deviceTemplates.length === 0 ? (
@@ -808,7 +819,7 @@ export function MapView() {
                       type: 'Feature',
                       geometry: {
                         type: 'Point',
-                        coordinates: [pendingMarker.latlng.lng, pendingMarker.latlng.lat],
+                        coordinates: [pendingDevicePoint.lng, pendingDevicePoint.lat],
                       },
                       properties: {
                         id: markerId,
