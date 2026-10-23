@@ -31,19 +31,28 @@ const ATTRIBUTION =
 
 // Min zoom dinamis: zoom terendah di mana 1 wilayah Indonesia mengisi layar
 // (menghindari tepi abu-abu; hanya Indonesia yang dirender).
+// Min zoom dinamis: zoom terendah di mana seluruh Indonesia muat di layar
+// (dengan padding) — supaya Indonesia terlihat penuh, tidak terpotong,
+// dan tidak terkunci hanya sebagian.
 function computeMinZoom(width: number, height: number): number {
   const d = Math.PI / 180
   const northY = Math.log(Math.tan(Math.PI / 4 + (INDONESIA_BOUNDS.getNorth() * d) / 2))
   const southY = Math.log(Math.tan(Math.PI / 4 + (INDONESIA_BOUNDS.getSouth() * d) / 2))
   const widthFraction = (INDONESIA_BOUNDS.getEast() - INDONESIA_BOUNDS.getWest()) / 360
   const heightFraction = (northY - southY) / (2 * Math.PI)
-  for (let zoom = 1; zoom <= 19; zoom += 1) {
+  const pad = 20
+  const availW = Math.max(1, width - pad * 2)
+  const availH = Math.max(1, height - pad * 2)
+  let best = 1
+  for (let zoom = 1; zoom <= 19; zoom++) {
     const worldPx = 256 * Math.pow(2, zoom)
-    if (widthFraction * worldPx >= width && heightFraction * worldPx >= height) {
-      return zoom
+    if (widthFraction * worldPx <= availW && heightFraction * worldPx <= availH) {
+      best = zoom
+    } else {
+      break
     }
   }
-  return 19
+  return Math.max(1, best)
 }
 
 function debounce(fn: (...args: any[]) => void, ms: number) {
