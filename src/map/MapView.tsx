@@ -151,6 +151,10 @@ export function MapView() {
   const [showDeviceForm, setShowDeviceForm] = useState(false)
   const [addingDevice, setAddingDevice] = useState(false)
   const [pendingDevicePoint, setPendingDevicePoint] = useState<L.LatLng | null>(null)
+  const [selectedTemplate, setSelectedTemplate] = useState<DeviceTemplate | null>(null)
+  const [showDeviceOwnerForm, setShowDeviceOwnerForm] = useState(false)
+  const [selectedMarkerData, setSelectedMarkerData] = useState<any>(null)
+  const [showDeviceSidebar, setShowDeviceSidebar] = useState(false)
   const addingDeviceRef = useRef(false)
 
   const setPlacingMode = useCallback((on: boolean) => {
@@ -541,14 +545,21 @@ export function MapView() {
       container.classList.remove('netmap-placing')
       setEditor(null)
     }
+    const onOpenDeviceSidebar = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      setSelectedMarkerData(detail.feature.properties)
+      setShowDeviceSidebar(true)
+    }
     window.addEventListener('pagehide', onPageHide)
     document.addEventListener('visibilitychange', onVisibility)
     window.addEventListener('keydown', onKey)
+    window.addEventListener('netmap:openDeviceSidebar', onOpenDeviceSidebar)
 
     return () => {
       window.removeEventListener('pagehide', onPageHide)
       document.removeEventListener('visibilitychange', onVisibility)
       window.removeEventListener('keydown', onKey)
+      window.removeEventListener('netmap:openDeviceSidebar', onOpenDeviceSidebar)
       flush()
       map.remove()
       swapRef.current = null
@@ -813,31 +824,8 @@ export function MapView() {
                   type="button"
                   className="device-selector-item"
                   onClick={() => {
-                    const store = getStore()
-                    const markerId = newId()
-                    const feature: StoredFeature = {
-                      type: 'Feature',
-                      geometry: {
-                        type: 'Point',
-                        coordinates: [pendingDevicePoint.lng, pendingDevicePoint.lat],
-                      },
-                      properties: {
-                        id: markerId,
-                        kind: 'marker',
-                        templateId: t.id,
-                        name: t.name,
-                        tag: t.tag,
-                        brand: t.brand,
-                        specs: t.specs,
-                      },
-                    }
-                    const result = loadLayers(store)
-                    const features = result.status === 'ok' || result.status === 'legacy' ? result.features : []
-                    features.push(feature)
-                    saveLayers(store, features)
-                    
-                    // Reload map to show new marker
-                    window.location.reload()
+                    setSelectedTemplate(t)
+                    setShowDeviceOwnerForm(true)
                   }}
                 >
                   <strong>{t.name}</strong>
@@ -850,6 +838,123 @@ export function MapView() {
           </div>
         </div>
       )}
+
+      {showDeviceOwnerForm && selectedTemplate && pendingDevicePoint && (
+        <div className="device-form-popup">
+          <div className="device-form-header">
+            <h3>Tambah Perangkat: {selectedTemplate.name}</h3>
+            <button type="button" onClick={() => { setShowDeviceOwnerForm(false); setSelectedTemplate(null); }}>✕</button>
+          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              const form = e.target as HTMLFormElement
+              const data = new FormData(form)
+              const owner = data.get('owner') as string
+              const location = data.get('location') as string
+
+              const store = getStore()
+              const markerId = newId()
+              const feature: StoredFeature = {
+                type: 'Feature',
+                geometry: {
+                  type: 'Point',
+                  coordinates: [pendingDevicePoint.lng, pendingDevicePoint.lat],
+                },
+                properties: {
+                  id: markerId,
+                  kind: 'marker',
+                  templateId: selectedTemplate.id,
+                  name: selectedTemplate.name,
+                  tag: selectedTemplate.tag,
+                  brand: selectedTemplate.brand,
+                  specs: selectedTemplate.specs,
+                  owner: owner,
+                  location: location,
+                  lat: pendingDevicePoint.lat,
+                  lng: pendingDevicePoint.lng,
+                },
+              }
+              const result = loadLayers(store)
+              const features = result.status === 'ok' || result.status === 'legacy' ? result.features : []
+              features.push(feature)
+              saveLayers(store, features)
+
+              setShowDeviceOwnerForm(false)
+              setSelectedTemplate(null)
+              setPendingDevicePoint(null)
+              window.location.reload()
+            }}
+          >
+            <label>
+              Pemilik Perangkat:
+              <input
+                type="text"
+                name="owner"
+                required
+                placeholder="Nama pemilik/instansi"
+              />
+            </label>
+            <label>
+              Lokasi:
+              <input
+                type="text"
+                name="location"
+                required
+                placeholder="Contoh: Rumah Budi, Jl. Merdeka No. 123"
+              />
+            </label>
+            <div className="device-form-actions">
+              <button type="submit">Simpan</button>
+              <button type="button" onClick={() => { setShowDeviceOwnerForm(false); setSelectedTemplate(null); }}>Batal</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {showDeviceSidebar && selectedMarkerData && (
+        <div className="device-sidebar">
+          <div className="device-sidebar-header">
+            <h3>{selectedMarkerData.name || 'Perangkat'}</h3>
+            <button type="button" onClick={() => { setShowDeviceSidebar(false); setSelectedMarkerData(null); }}>✕</button>
+          </div>
+          <div className="device-sidebar-content">
+            <div className="device-info-group">
+              <label>Pemilik:</label>
+              <p>{selectedMarkerData.owner || '—'}</p>
+            </div>
+            <div className="device-info-group">
+              <label>Lokasi:</label>
+              <p>{selectedMarkerData.location || '—'}</p>
+            </div>
+            <div className="device-info-group">
+              <label>Koordinat:</label>
+              <p>{selectedMarkerData.lat?.toFixed(6) || '—'}, {selectedMarkerData.lng?.toFixed(6) || '—'}</p>
+            </div>
+            <div className="device-info-group">
+              <label>Perangkat:</label>
+              <p>{selectedMarkerData.name || '—'}</p>
+            </div>
+            <div className="device-info-group">
+              <label>Tag:</label>
+              <p>{selectedMarkerData.tag || '—'}</p>
+            </div>
+            <div className="device-info-group">
+              <label>Brand:</label>
+              <p>{selectedMarkerData.brand || '—'}</p>
+            </div>
+            {selectedMarkerData.specs && Object.keys(selectedMarkerData.specs).length > 0 && (
+              <div className="device-info-group">
+                <label>Spesifikasi:</label>
+                {Object.entries(selectedMarkerData.specs).map(([k, v]) => (
+                  <p key={k}><small>{k}: {String(v)}</small></p>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

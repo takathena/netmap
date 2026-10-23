@@ -143,7 +143,27 @@ export function fromFeature(f: StoredFeature): { layer: L.Layer; meta: LayerMeta
     case 'marker': {
       const ll = pointLatLng(f)
       if (!ll) return null
-      return { layer: L.marker(ll), meta: { id, kind } }
+      const layer = L.marker(ll)
+      // Tooltip: show owner name on hover
+      const owner = p.owner as string | undefined
+      const location = p.location as string | undefined
+      const name = p.name as string | undefined
+      const tag = p.tag as string | undefined
+      const brand = p.brand as string | undefined
+      let tooltipText = ''
+      if (owner) tooltipText += `Pemilik: ${owner}`
+      if (location) tooltipText += (tooltipText ? '\n' : '') + `Lokasi: ${location}`
+      if (name) tooltipText += (tooltipText ? '\n' : '') + `Perangkat: ${name}`
+      if (tag || brand) tooltipText += (tooltipText ? '\n' : '') + `(${tag || ''} ${brand || ''})`.trim()
+      if (tooltipText) layer.bindTooltip(tooltipText, { direction: 'top' })
+      // Click handler: open device sidebar
+      layer.on('click', (e: L.LeafletEvent) => {
+        const mapEvent = e as L.LeafletMouseEvent
+        ;(window as any).dispatchEvent(new CustomEvent('netmap:openDeviceSidebar', {
+          detail: { feature: f, latlng: mapEvent.latlng }
+        }))
+      })
+      return { layer, meta: { id, kind } }
     }
     case 'circle': {
       const ll = pointLatLng(f)
