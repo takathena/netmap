@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Env (Stadia API key, dsb.)
+.env
+.env.*
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
