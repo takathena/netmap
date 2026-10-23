@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import '@geoman-io/leaflet-geoman-free'
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css'
@@ -45,6 +45,10 @@ function computeMinZoom(width: number, height: number): number {
 
 export function MapView() {
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const mapRef = useRef<L.Map | null>(null)
+  const tileRef = useRef<L.TileLayer | null>(null)
+  const swapRef = useRef<((key: StyleKey) => void) | null>(null)
+  const [activeStyle, setActiveStyle] = useState<StyleKey>('satellite')
 
   useEffect(() => {
     const container = containerRef.current
@@ -65,55 +69,25 @@ export function MapView() {
       preferCanvas: true,
       attributionControl: true,
     })
+    mapRef.current = map
 
-    // Tile layer factory (Stadia, 2 style)
-    function makeTile(style: StyleKey) {
-      const s = STYLES[style]
+    function swap(key: StyleKey) {
+      const m = mapRef.current
+      if (!m) return
+      if (tileRef.current) m.removeLayer(tileRef.current)
+      const s = STYLES[key]
       const url = STADIA_KEY ? `${s.url}?api_key=${STADIA_KEY}` : s.url
-      return L.tileLayer(url, {
+      const layer = L.tileLayer(url, {
         maxZoom: 19,
         bounds: BBOX,
         attribution: ATTRIBUTION,
       })
+      layer.addTo(m)
+      tileRef.current = layer
+      setActiveStyle(key)
     }
-
-    let current: L.TileLayer = makeTile('satellite').addTo(map)
-    let currentKey: StyleKey = 'satellite'
-
-    // Switcher sederhana (2 tombol) — fixed di pojok kanan atas
-    const switcher = L.control({ position: 'topright' })
-    switcher.onAdd = () => {
-      const div = L.DomUtil.create('div', 'stadia-switcher')
-      div.style.cssText =
-        'background:#0b1220cc;color:#e2e8f0;padding:4px 6px;border-radius:8px;font-size:12px;display:flex;gap:4px;backdrop-filter:blur(4px);'
-
-      const btnSat = L.DomUtil.create('button', '', div)
-      btnSat.textContent = STYLES.satellite.label
-      const btnBright = L.DomUtil.create('button', '', div)
-      btnBright.textContent = STYLES.bright.label
-      const baseBtn = 'padding:4px 8px;border-radius:6px;border:0;cursor:pointer;'
-
-      function setActive(k: StyleKey) {
-        map.removeLayer(current)
-        current = makeTile(k).addTo(map)
-        currentKey = k
-        btnSat.style.cssText = `${baseBtn}background:${k === 'satellite' ? '#34d399' : '#1e293b'};color:${k === 'satellite' ? '#0b1220' : '#e2e8f0'};`
-        btnBright.style.cssText = `${baseBtn}background:${k === 'bright' ? '#34d399' : '#1e293b'};color:${k === 'bright' ? '#0b1220' : '#e2e8f0'};`
-      }
-
-      L.DomEvent.on(btnSat, 'click', (e) => {
-        L.DomEvent.stopPropagation(e)
-        setActive('satellite')
-      })
-      L.DomEvent.on(btnBright, 'click', (e) => {
-        L.DomEvent.stopPropagation(e)
-        setActive('bright')
-      })
-      L.DomEvent.disableClickPropagation(div)
-      setActive(currentKey)
-      return div
-    }
-    switcher.addTo(map)
+    swapRef.current = swap
+    swap('satellite')
 
     // Cluster group (ringan, chunked loading)
     const cluster = (L as any).markerClusterGroup({
@@ -158,8 +132,30 @@ export function MapView() {
 
     return () => {
       map.remove()
+      mapRef.current = null
+      tileRef.current = null
+      swapRef.current = null
     }
   }, [])
 
-  return <div ref={containerRef} className="map-container" />
+  return (
+    <div ref={containerRef} className="map-container">
+      <div className="style-switcher">
+        <button
+          type="button"
+          className={`style-btn ${activeStyle === 'satellite' ? 'active' : ''}`}
+          onClick={() => swapRef.current?.('satellite')}
+        >
+          Satelit
+        </button>
+        <button
+          type="button"
+          className={`style-btn ${activeStyle === 'bright' ? 'active' : ''}`}
+          onClick={() => swapRef.current?.('bright')}
+        >
+          Bright
+        </button>
+      </div>
+    </div>
+  )
 }
