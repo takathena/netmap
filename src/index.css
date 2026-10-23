@@ -1,0 +1,244 @@
+/* Reset dasar */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: #0b1220;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: #e2e8f0;
+}
+
+/* Peta memenuhi layar (tampilan minimal seperti tldraw canvas) */
+.map-container {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* Leaflet: pastikan tile & marker tidak rusak oleh reset */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: #0b1220;
+  font-family: inherit;
+  outline: none;
+}
+
+.leaflet-container img {
+  max-width: none !important;
+}
+
+/* Geoman toolbar: floating bar (tampilan sederhana) */
+.leaflet-pm-toolbar {
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+/* Switcher style peta (2 opsi) */
+.style-switcher {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(11, 18, 32, 0.8);
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+}
+
+.style-btn {
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-size: 12px;
+}
+
+.style-btn.active {
+  background: #34d399;
+  color: #0b1220;
+  font-weight: 600;
+}
+
+/* Floating bar (tldraw-like) */
+.floating-bar {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  gap: 6px;
+  padding: 6px 8px;
+  background: rgba(11, 18, 32, 0.85);
+  border-radius: 10px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.floating-btn {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.floating-btn.active {
+  background: #34d399;
+  color: #0b1220;
+  font-weight: 600;
+}
+.map-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+/* Sembunyikan scrollbar yang tidak perlu */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+/* ---- Tahap 1.1: struktur peta, label, editor, notifikasi ---- */
+
+/* UI (switcher, bar, editor) adalah saudara container peta, bukan anaknya. */
+.map-root {
+  position: absolute;
+  inset: 0;
+}
+
+.map-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/* Label teks (satu-satunya representasi teks; sama sebelum & sesudah refresh) */
+.netmap-label-icon {
+  background: none;
+  border: 0;
+}
+
+.netmap-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #0b1220;
+  border: 1px solid rgba(11, 18, 32, 0.45);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  font: 600 12px/1.4 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Mode menaruh label: kursor crosshair */
+.netmap-placing.leaflet-container,
+.netmap-placing .leaflet-grab,
+.netmap-placing .leaflet-interactive {
+  cursor: crosshair;
+}
+
+.floating-bar {
+  align-items: center;
+}
+
+.floating-hint {
+  font-size: 12px;
+  color: #94a3b8;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+.floating-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.label-editor {
+  position: absolute;
+  bottom: 68px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(11, 18, 32, 0.92);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.label-input {
+  width: min(60vw, 280px);
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 13px;
+  outline: none;
+}
+
+.label-input:focus {
+  border-color: #34d399;
+}
+
+.notice {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1200;
+  max-width: min(90vw, 560px);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #7f1d1d;
+  color: #fee2e2;
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.notice button {
+  flex: none;
+  border: 0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  background: #991b1b;
+  color: #fee2e2;
+  font-size: 12px;
+}

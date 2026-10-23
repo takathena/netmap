@@ -1,0 +1,15 @@
+// Lapisan penyimpanan netmap (Tahap 1.1).
+//
+// Modul ini sengaja TIDAK bergantung pada Leaflet/React supaya logikanya
+// (skema, migrasi, backup, validasi) bisa diuji sendiri.
+//
+// Aturan yang dijaga di sini:
+//  - Skema berversi (`v: 2`). Format lama (array GeoJSON polos) = v1 dimigrasi.
+//  - Data lama TIDAK pernah ditimpa tanpa salinan: v1 dan data rusak disalin
+//    ke kunci cadangan dulu.
+//  - Tidak ada error yang ditelan diam-diam: semua kegagalan dikembalikan ke
+//    pemanggil (untuk ditampilkan ke pengguna) dan dicatat ke console.
+
+export const LAYERS_KEY = 'netmap-p1-layers'
+export const VIEW_KEY = 'netmap-p1-view'
+export const CLUSTER_KEY = 'netmap-p1-cluster'
