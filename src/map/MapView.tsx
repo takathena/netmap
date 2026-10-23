@@ -72,6 +72,10 @@ export function MapView() {
   const swapRef = useRef<((key: StyleKey) => void) | null>(null)
   const clusterRef = useRef<any>(null)
   const [activeStyle, setActiveStyle] = useState<StyleKey>('satellite')
+  const [clusterEnabled, setClusterEnabled] = useState(true)
+  const plainRef = useRef<L.LayerGroup | null>(null)
+  const toggleRef = useRef<(() => void) | null>(null)
+  const clusterEnabledRef = useRef(true)
 
   useEffect(() => {
     const container = containerRef.current
@@ -126,6 +130,10 @@ export function MapView() {
     map.addLayer(cluster)
     clusterRef.current = cluster
 
+    // Layer biasa untuk marker saat cluster dimatikan
+    const plain = L.layerGroup().addTo(map)
+    plainRef.current = plain
+
     // Geoman: toolbar mengambang bawaan plugin
     const pm = (map as any).pm
     pm.addControls({
@@ -141,15 +149,29 @@ export function MapView() {
       removalMode: true,
     })
 
-    // Wiring minimal: marker hasil gambar geoman masuk cluster group
+    // Wiring minimal: marker hasil gambar geoman masuk cluster/plain sesuai toggle
     map.on('pm:create', (e: any) => {
       const layer = e.layer
       if (layer instanceof L.Marker) {
         map.removeLayer(layer)
-        cluster.addLayer(layer)
+        if (clusterEnabledRef.current) cluster.addLayer(layer)
+        else plain.addLayer(layer)
       }
       saveState()
     })
+
+    // Toggle cluster on/off
+    toggleRef.current = () => {
+      const next = !clusterEnabledRef.current
+      clusterEnabledRef.current = next
+      setClusterEnabled(next)
+      const from = next ? plain : cluster
+      const to = next ? cluster : plain
+      from.getLayers().forEach((l: any) => {
+        from.removeLayer(l)
+        to.addLayer(l)
+      })
+    }
 
     // Simpan state (layers + view) ke localStorage
     function collectLayers() {
@@ -250,6 +272,8 @@ export function MapView() {
       tileRef.current = null
       swapRef.current = null
       clusterRef.current = null
+      plainRef.current = null
+      toggleRef.current = null
     }
   }, [])
 
@@ -269,6 +293,17 @@ export function MapView() {
           onClick={() => swapRef.current?.('bright')}
         >
           Bright
+        </button>
+      </div>
+
+      <div className="floating-bar">
+        <button
+          type="button"
+          className={`floating-btn ${clusterEnabled ? 'active' : ''}`}
+          onClick={() => toggleRef.current?.()}
+          title="Aktifkan/nonaktifkan clustering marker"
+        >
+          Cluster: {clusterEnabled ? 'ON' : 'OFF'}
         </button>
       </div>
     </div>
